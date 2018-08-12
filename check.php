@@ -52,6 +52,9 @@ $stmt->execute();
 $stmt->bind_result($db_school_id, $db_prc_id, $db_realname, $db_gender, $db_college, $db_major, $db_class);
 $stmt->fetch();
 
+$stmt->close();
+$mysqli->close();
+
 if (!isset($db_realname) || $db_realname == '') {
     exit(json_encode(['ok' => false, 'msg' => '姓名身份证号组合有误']));
 }
@@ -72,8 +75,5 @@ $yb_data = [
     'native_place' => '',
     'build_time' => time(),
     ];
-
-$stmt->close();
-$mysqli->close();
 
 exit(json_encode(array_merge(['ok' => true], run($yb_data))));
