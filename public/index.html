@@ -59,7 +59,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>北京邮电大学 - 2018级本科新生易班认证平台</title>
+    <title>BUPT - YIBAN AUTHORIZATION SYSTEM FOR 2018 FRESHMAN</title>
 </head>
 
 <body>
@@ -70,7 +70,7 @@
         <div class="nav-wrapper">
             <a class="brand-logo" href=""><img src="pic/logo.gif" class="img-responsive"></a>
             <ul id="nav-mobile" class="right">
-                <h1 class="header" style="color:white;letter-spacing:4px">易班认证平台</h1>
+                <h1 class="header" style="color:white;">YIBAN AUTHORIZATION SYSTEM</h1>
             </ul>
 
         </div>
@@ -85,21 +85,21 @@
             <div class="row">
                 <div class="input-field col s6 offset-s3">
                     <i class="material-icons prefix">account_circle</i>
-                    <input placeholder="姓名" id="name" type="text" class="validate">
-                    <label for="name">姓名</label>
+                    <input placeholder="Full name" id="name" type="text" class="validate">
+                    <label for="name">Full name</label>
                 </div>
             </div>
             <div class="row">
                 <div class="input-field col s6 offset-s3">
                     <i class="material-icons prefix">fingerprint</i>
-                    <input placeholder="身份证号" id="prc_id" type="password" class="validate">
-                    <label for="prc_id">身份证号</label>
+                    <input placeholder="ID number" id="prc_id" type="password" class="validate">
+                    <label for="prc_id">ID number</label>
                 </div>
             </div>
             <div class="row">
                 <div class="input-field col s6 offset-s3">
                     <button id="submit-button" class="col s12 btn waves-effect waves-light" type="submit" name="action">
-                        登陆
+                        Go
                         <i class="material-icons right">send</i>
                     </button>
                     <div class="progress hide">
@@ -119,7 +119,7 @@
 <footer class="page-footer logo-blue">
     <div class="footer-copyright">
         <div class="container">
-            © 2018 北京邮电大学易班发展中心
+            © 2018 BUPT YIBAN CENTER OF DEVELOPMENTS
         </div>
     </div>
 </footer>
@@ -128,6 +128,14 @@
 <script src="js/materialize.min.js"></script>
 
 <script>
+    var m;
+
+    if (!String.prototype.startsWith) {
+        String.prototype.startsWith = function (searchString, position) {
+            position = position || 0;
+            return this.indexOf(searchString, position) === position;
+        };
+    }
 
     function check_form() {
         return document.getElementById('name').value.length > 0
@@ -139,10 +147,44 @@
         $('#submit-button').removeClass('disabled');
     }
 
+    function get_lang() {
+        var l;
+        if (navigator.browserLanguage !== undefined && navigator.browserLanguage !== null) {
+            l = navigator.systemLanguage;
+        } else {
+            l = navigator.language;
+        }
+        if (l === "zh-CN") {
+            return 'zhs';
+        } else if (l.startsWith('zh')) {
+            return 'zht';
+        } else if (l.startsWith('ja')) {
+            return 'ja';
+        }
+        return 'en';
+    }
+
+    var lang = get_lang();
+    document.write("<script src='lang/" + lang + ".js'><\/script>");
+
     window.onload = function () {
+
+        if (m === undefined || m === null) {
+            m = {not_null: 'Your input must not be empty.'};
+        } else {
+            document.querySelector('title').innerHTML = m.title;
+            document.querySelector('header').querySelector('h1').innerHTML = m.nav;
+            document.querySelector('#name').setAttribute('placeholder', m.name);
+            document.querySelector("label[for='name']").innerHTML = m.name;
+            document.querySelector('#prc_id').setAttribute('placeholder', m.prc_id);
+            document.querySelector("label[for='prc_id']").innerHTML = m.prc_id;
+            document.querySelector('button').innerHTML = m.go;
+            document.querySelector('.footer-copyright').querySelector('.container').innerHTML = m.footer;
+        }
+
         document.getElementById('submit-button').onclick = function () {
             if (!check_form()) {
-                M.toast({html: "姓名与身份证号不能为空"});
+                M.toast({html: m.not_null});
                 return;
             }
 
@@ -154,11 +196,12 @@
                 method: 'POST',
                 data: {
                     name: document.getElementById('name').value,
-                    prc_id: document.getElementById('prc_id').value
+                    prc_id: document.getElementById('prc_id').value,
+                    l: lang
                 }
-            }).fail(function() {
+            }).fail(function () {
                 restore_button();
-            }).done(function(rp) {
+            }).done(function (rp) {
                 var rj = JSON.parse(rp);
                 if (!rj.ok) {
                     M.toast({html: rj.msg});
