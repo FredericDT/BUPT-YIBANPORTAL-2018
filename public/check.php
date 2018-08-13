@@ -1,12 +1,14 @@
 <?php
 
-require "db_config.php";
+require "../db_config.php";
 
 $scId = '1005_0';
+$certPath = "../";
 
-function encodeArr($infoArr, $path) {
+function encodeArr($infoArr) {
+    global $certPath;
     $infoJson = json_encode($infoArr);
-    $privkey = file_get_contents($path . 'certification.pem');
+    $privkey = file_get_contents($certPath . 'certification.pem');
     $pack = "";
     foreach (str_split($infoJson, 245) as $str) {
         $crypted = "";
