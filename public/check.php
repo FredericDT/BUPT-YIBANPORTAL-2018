@@ -2,10 +2,38 @@
 
 require "../db_config.php";
 
-$scId = '1005_0';
-$enterYear = '2018';
-$certPath = "../";
+/*
+ * @param $scId
+ *
+ * should be contained in a file named "give.txt" with is distributed by yiban company
+ *
+ */
+const scId = '1005_0';
 
+/*
+ * @param $enterYear
+ *
+ * a necessary parameter which will be delivered to yiban's o api
+ * representing the enter year of a person
+ * should in the form of "yyyy"
+ *
+ */
+
+const enterYear = '2018';
+
+/*
+ * @param $certPath
+ *
+ * path to the certification which should be delivered by the yiban company
+ * should be ended with a path separator, in unix system which is "/"
+ *
+ * YOU ARE NOT ENCOURAGED TO PLACE THE CERTIFICATION BELOW THE "public" FOLDER
+ * OR ANYWHERE CAN BE ACCESS DANGEROUSLY
+ *
+ */
+const certPath = "../";
+
+// a variable containing localize messages, using those messages via their key
 $messages = [
     'en' => [
         'name_prc_id_not_null' => 'Name and prc_id can not be empty.',
@@ -32,10 +60,10 @@ $messages = [
 $l = isset($_REQUEST['l']) ? $_REQUEST['l'] : 'en';
 $m = $messages[$l];
 
+// the following two functions are derived from the UIS sdk, thx yiban
 function encodeArr($infoArr) {
-    global $certPath;
     $infoJson = json_encode($infoArr);
-    $privkey = file_get_contents($certPath . 'certification.pem');
+    $privkey = file_get_contents(certPath . 'certification.pem');
     $pack = "";
     foreach (str_split($infoJson, 245) as $str) {
         $crypted = "";
@@ -48,10 +76,9 @@ function encodeArr($infoArr) {
 }
 
 function run($infoArr, $path = '', $isMobile = false) {
-    global $scId;
     $say = encodeArr($infoArr);
     $type = $isMobile ? '&type=mobile' : '';
-    $hrefUrl = 'https://o.yiban.cn/uiss/check?scid=' . $scId . $type;
+    $hrefUrl = 'https://o.yiban.cn/uiss/check?scid=' . scId . $type;
     return [
         'html' => "<form style='display:none;' id='run' name='run' method='post' action='{$hrefUrl}'><input name='say' type='text' value='{$say}' /></form>",
         'script' => 'document.run.submit();'
@@ -75,10 +102,10 @@ if (!$mysqli) {
 }
 $mysqli->query("set names 'utf8'");
 
-$stmt = $mysqli->prepare("SELECT `school_id`,`prc_id`,`realname`,`gender`,`college`,`major`,`class` FROM `existed_info` WHERE realname=? AND prc_id=?");
+$stmt = $mysqli->prepare("SELECT `school_id`,`realname`,`college`,`class` FROM `existed_info` WHERE realname=? AND prc_id=?");
 $stmt->bind_param('ss', $name, $prc_id);
 $stmt->execute();
-$stmt->bind_result($db_school_id, $db_prc_id, $db_realname, $db_gender, $db_college, $db_major, $db_class);
+$stmt->bind_result($db_school_id, $db_realname, $db_college, $db_class);
 $stmt->fetch();
 
 $stmt->close();
@@ -92,7 +119,7 @@ $yb_data = [
     'name' => $db_realname,
     'student_id' => $db_school_id,
     'status_id' => '', // 身份证号
-    'enter_year' => $enterYear,
+    'enter_year' => enterYear,
     'status' => '', //学生状态（0-在读、1-休学、2-离校）
     'schooling' => '',
     'education' => '',
