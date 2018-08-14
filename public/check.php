@@ -18,7 +18,6 @@ const scId = '1005_0';
  * should in the form of "yyyy"
  *
  */
-
 const enterYear = '2018';
 
 /*
@@ -57,7 +56,7 @@ $messages = [
     ]
 ];
 
-$l = isset($_REQUEST['l']) ? $_REQUEST['l'] : 'en';
+$l = isset($_POST['l']) ? $_POST['l'] : 'en';
 $m = $messages[$l];
 
 // the following two functions are derived from the UIS sdk, thx yiban
@@ -85,12 +84,12 @@ function run($infoArr, $path = '', $isMobile = false) {
     ];
 }
 
-if (!isset($_REQUEST['name']) || !isset($_REQUEST['prc_id'])) {
+if (!isset($_POST['name']) || !isset($_POST['prc_id'])) {
     exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_not_null']]));
 }
 
-$name = trim(htmlspecialchars($_REQUEST['name']));
-$prc_id = trim($_REQUEST['prc_id']);
+$name = trim(htmlspecialchars($_POST['name']));
+$prc_id = trim($_POST['prc_id']);
 
 if ($prc_id == '' || $name == '') {
     exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_not_null']]));
