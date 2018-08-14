@@ -3,7 +3,7 @@
 require "../db_config.php";
 
 /*
- * @param $scId
+ * @param scId
  *
  * should be contained in a file named "give.txt" with is distributed by yiban company
  *
@@ -11,7 +11,7 @@ require "../db_config.php";
 const scId = '1005_0';
 
 /*
- * @param $enterYear
+ * @param enterYear
  *
  * a necessary parameter which will be delivered to yiban's o api
  * representing the enter year of a person
@@ -21,7 +21,7 @@ const scId = '1005_0';
 const enterYear = '2018';
 
 /*
- * @param $certPath
+ * @param certPath
  *
  * path to the certification which should be delivered by the yiban company
  * should be ended with a path separator, in unix system which is "/"
@@ -31,6 +31,14 @@ const enterYear = '2018';
  *
  */
 const certPath = "../";
+
+/*
+ * @param logFile
+ *
+ * file path of the log
+ *
+ */
+const logFile = '/var/log/yibanportal-2018.log';
 
 // a variable containing localize messages, using those messages via their key
 $messages = [
@@ -84,6 +92,15 @@ function run($infoArr, $path = '', $isMobile = false) {
     ];
 }
 
+const LOG_LEVEL_INFO = "INFO";
+const LOG_LEVEL_WARNING = "WARNING";
+const LOG_LEVEL_SEVERE = "SEVERE";
+function yibanportal_log($level, $msg) {
+    $handle = fopen(logFile, 'a') or fopen('yibanportal.log', 'a');
+    fwrite($handle, '[ '.$level.' '.date('YmdHis').' ] '.$msg."\n");
+    fclose($handle);
+}
+
 if (!isset($_POST['name']) || !isset($_POST['prc_id'])) {
     exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_not_null']]));
 }
@@ -97,6 +114,7 @@ if ($prc_id == '' || $name == '') {
 
 $mysqli = new mysqli($db_host, $db_user, $db_password, $db_database);
 if (!$mysqli) {
+    yibanportal_log(LOG_LEVEL_SEVERE, 'database error: '.$mysqli->error);
     exit(json_encode(['ok' => false, 'msg' => $m['database_error']]));
 }
 $mysqli->query("set names 'utf8'");
@@ -111,6 +129,7 @@ $stmt->close();
 $mysqli->close();
 
 if (!isset($db_realname) || $db_realname == '') {
+    yibanportal_log(LOG_LEVEL_WARNING, $name.' tried to login but failed');
     exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_pair_not_exist']]));
 }
 
@@ -131,4 +150,5 @@ $yb_data = [
     'build_time' => time(),
     ];
 
+yibanportal_log(LOG_LEVEL_INFO, $prc_id.' logged in successfully');
 exit(json_encode(array_merge(['ok' => true], run($yb_data))));
