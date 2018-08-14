@@ -167,7 +167,7 @@
     var lang = get_lang();
     document.write("<script src='lang/" + lang + ".js'><\/script>");
 
-    window.onload = function () {
+    $(document).ready(function () {
 
         if (m === undefined || m === null) {
             m = {not_null: 'Your input must not be empty.'};
@@ -179,7 +179,7 @@
             document.querySelector('#prc_id').setAttribute('placeholder', m.prc_id);
             document.querySelector("label[for='prc_id']").innerHTML = m.prc_id;
             document.querySelector('button').innerHTML = m.go;
-            document.querySelector('.footer-copyright').querySelector('.container').innerHTML = m.footer;
+            document.querySelector('.footer-copyright').querySelector('.container').innerHTML = "© 2018 " + m.footer;
         }
 
         document.getElementById('submit-button').onclick = function () {
@@ -214,7 +214,7 @@
             });
 
         };
-    };
+    });
 </script>
 
 </body>
