@@ -1,6 +1,6 @@
 <?php
 
-require "../db_config.php";
+require "../ldap_config.php";
 
 /*
  * @param scId
@@ -9,16 +9,6 @@ require "../db_config.php";
  *
  */
 const scId = '1005_0';
-
-/*
- * @param enterYear
- *
- * a necessary parameter which will be delivered to yiban's o api
- * representing the enter year of a person
- * should in the form of "yyyy"
- *
- */
-const enterYear = '2018';
 
 /*
  * @param certPath
@@ -43,24 +33,24 @@ const logFile = '/var/log/yibanportal-2018.log';
 // a variable containing localize messages, using those messages via their key
 $messages = [
     'en' => [
-        'name_prc_id_not_null' => 'Name and prc_id can not be empty.',
+        'username_password_not_null' => 'Username and password can not be empty.',
         'database_error' => 'Database error.',
-        'name_prc_id_pair_not_exist' => 'Your input is wrong. Please check.'
+        'username_password_pair_not_exist' => 'Your input is wrong. Please check.'
     ],
     'zhs' => [
-        'name_prc_id_not_null' => '姓名及身份证号不能为空',
+        'username_password_not_null' => '学号密码不能为空',
         'database_error' => '数据库错误',
-        'name_prc_id_pair_not_exist' => '姓名身份证号组合有误'
+        'username_password_pair_not_exist' => '学号密码组合有误'
     ],
     'zht' => [
-        'name_prc_id_not_null' => '姓名及身份證號不能為空',
+        'username_password_not_null' => '學號密碼不能為空',
         'database_error' => '數據庫錯誤',
-        'name_prc_id_pair_not_exist' => '姓名身份證號組合有誤'
+        'username_password_pair_not_exist' => '學號密碼組合有誤'
     ],
     'ja' => [
-        'name_prc_id_not_null' => '入力は空白にすることはできません。',
+        'username_password_not_null' => '入力は空白にすることはできません。',
         'database_error' => 'データベースエラー',
-        'name_prc_id_pair_not_exist' => '入力した情報が間違っています。確認してください'
+        'username_password_pair_not_exist' => '入力した情報が間違っています。確認してください'
     ]
 ];
 
@@ -86,10 +76,34 @@ function run($infoArr, $path = '', $isMobile = false) {
     $say = encodeArr($infoArr);
     $type = $isMobile ? '&type=mobile' : '';
     $hrefUrl = 'https://o.yiban.cn/uiss/check?scid=' . scId . $type;
-    return [
-        'html' => "<form style='display:none;' id='run' name='run' method='post' action='{$hrefUrl}'><input name='say' type='text' value='{$say}' /></form>",
-        'script' => 'document.run.submit();'
-    ];
+    return ['html' => "<form style='display:none;' id='run' name='run' method='post' action='{$hrefUrl}'><input name='say' type='text' value='{$say}' /></form>", 'script' => 'document.run.submit();'];
+}
+
+function get_user_info_from_oa($id, $type) {
+    if ($type) {
+        $url = 'http://oa.byr.cn/api/v1/teacher-info?teacher_id=' . $id;
+    } else {
+        $url = 'http://oa.byr.cn/api/v1/student-info?stu_id=' . $id;
+    }
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 360);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $data = curl_exec($ch);
+    $data = json_decode($data, true);
+    curl_close($ch);
+    return $data;
+}
+
+function check_username_password_pair($username, $password) {
+    global $ldap_host, $ldap_port, $ldap_admin_user, $ldap_admin_pass;
+    $connection = @ldap_connect($ldap_host, $ldap_port);
+    $v = @ldap_bind($connection, 'uid=' . $ldap_admin_user . ',ou=Manager,dc=bupt,dc=edu,dc=cn', $ldap_admin_pass);
+    $v = ldap_search($connection, 'ou=People,dc=bupt,dc=edu,dc=cn', "uid=$username");
+    $e = ldap_get_entries($connection, $v);
+    $dn = $e[0]['dn'];
+    $ldap_result = @ldap_bind($connection, $dn, $password);
+    return $ldap_result != null;
 }
 
 const LOG_LEVEL_INFO = "INFO";
@@ -97,58 +111,46 @@ const LOG_LEVEL_WARNING = "WARNING";
 const LOG_LEVEL_SEVERE = "SEVERE";
 function yibanportal_log($level, $msg) {
     $handle = fopen(logFile, 'a') or fopen('yibanportal.log', 'a');
-    fwrite($handle, '[ '.$level.' '.date('YmdHis').' ] '.$msg."\n");
+    fwrite($handle, '[ ' . $level . ' ' . date('YmdHis') . ' ] ' . $msg . "\n");
     fclose($handle);
 }
 
-if (!isset($_POST['name']) || !isset($_POST['prc_id'])) {
-    exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_not_null']]));
+if (!isset($_POST['username']) || !isset($_POST['password'])) {
+    exit(json_encode(['ok' => false, 'msg' => $m['username_password_not_null']]));
 }
 
-$name = trim(htmlspecialchars($_POST['name']));
-$prc_id = trim($_POST['prc_id']);
+$username = trim(htmlspecialchars($_POST['username']));
+$password = trim($_POST['password']);
+$usertype = trim($_POST['usertype']);
 
-if ($prc_id == '' || $name == '') {
-    exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_not_null']]));
+if ($password == '' || $username == '') {
+    exit(json_encode(['ok' => false, 'msg' => $m['username_password_not_null']]));
 }
 
-$mysqli = new mysqli($db_host, $db_user, $db_password, $db_database);
-if (!$mysqli) {
-    yibanportal_log(LOG_LEVEL_SEVERE, 'database error: '.$mysqli->error);
-    exit(json_encode(['ok' => false, 'msg' => $m['database_error']]));
-}
-$mysqli->query("set names 'utf8'");
+$ldap_status = check_username_password_pair($username, $password);
 
-$stmt = $mysqli->prepare("SELECT `school_id`,`realname`,`college`,`class` FROM `existed_info` WHERE realname=? AND prc_id=?");
-$stmt->bind_param('ss', $name, $prc_id);
-$stmt->execute();
-$stmt->bind_result($db_school_id, $db_realname, $db_college, $db_class);
-$stmt->fetch();
-
-$stmt->close();
-$mysqli->close();
-
-if (!isset($db_realname) || $db_realname == '') {
-    yibanportal_log(LOG_LEVEL_WARNING, $name.' tried to login but failed');
-    exit(json_encode(['ok' => false, 'msg' => $m['name_prc_id_pair_not_exist']]));
+if (!$ldap_status) {
+    yibanportal_log(LOG_LEVEL_WARNING, $username . ' tried to login but failed');
+    exit(json_encode(['ok' => false, 'msg' => $m['username_password_pair_not_exist']]));
 }
 
-$yb_data = [
-    'name' => $db_realname,
-    'student_id' => $db_school_id,
-    'status_id' => '', // 身份证号
-    'enter_year' => enterYear,
-    'status' => '', //学生状态（0-在读、1-休学、2-离校）
-    'schooling' => '',
-    'education' => '',
-    'role' => 0, // student
-    'college' => $db_college,
-    'sex' => '',
-    'specialty' => '',
-    'eclass' => $db_class,
-    'native_place' => '',
-    'build_time' => time(),
-    ];
+$user_info = get_user_info_from_oa($username, $usertype);
 
-yibanportal_log(LOG_LEVEL_INFO, $prc_id.' logged in successfully');
+if (!$user_info['status']) {
+    yibanportal_log(LOG_LEVEL_WARNING, $username . ' tried to login but failed');
+    exit(json_encode(['ok' => false, 'msg' => $m['username_password_pair_not_exist']]));
+}
+
+$db_realname = $usertype > 0 ? $user_info['teacher']['name'] : $user_info['student']['name'];
+$yb_data = ['name' => $db_realname, 'build_time' => time(), 'role' => $usertype];
+
+if ($usertype > 0) {
+    $yb_data['teacher_id'] = $user_info['teacher']['teacher_id'];
+} else {
+    $yb_data['student_id'] = $user_info['student']['student_id'];
+    $yb_data['enter_year'] = substr($user_info['student']['student_id'],0,4);
+    $yb_data['college'] = $user_info['student']['college'];
+}
+
+yibanportal_log(LOG_LEVEL_INFO, $username . ' logged in successfully');
 exit(json_encode(array_merge(['ok' => true], run($yb_data))));

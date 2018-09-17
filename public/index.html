@@ -59,7 +59,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>BUPT - YIBAN AUTHORIZATION SYSTEM FOR 2018 FRESHMAN</title>
+    <title>BUPT - YIBAN AUTHORIZATION SYSTEM</title>
 </head>
 
 <body>
@@ -81,34 +81,53 @@
 <main class="valign-wrapper">
 
     <div class="container">
-        <div class="login-content">
-            <div class="row">
-                <div class="input-field col s6 offset-s3">
-                    <i class="material-icons prefix">account_circle</i>
-                    <input placeholder="Full name" id="name" type="text" class="validate">
-                    <label for="name">Full name</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s6 offset-s3">
-                    <i class="material-icons prefix">fingerprint</i>
-                    <input placeholder="ID number" id="prc_id" type="password" class="validate">
-                    <label for="prc_id">ID number</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s6 offset-s3">
-                    <button id="submit-button" class="col s12 btn waves-effect waves-light" type="submit" name="action">
-                        Go
-                        <i class="material-icons right">send</i>
-                    </button>
-                    <div class="progress hide">
-                        <div class="indeterminate"></div>
+        <div class="col m6 offset-m3 s12">
+            <form class="login-content" id="form">
+                <div class="row">
+                    <div class="input-field">
+                        <i class="material-icons prefix">account_circle</i>
+                        <input name="username" placeholder="Student ID" id="username" type="text" class="validate">
+                        <label for="username">Student ID</label>
                     </div>
                 </div>
-            </div>
-        </div>
+                <div class="row">
+                    <div class="input-field">
+                        <i class="material-icons prefix">fingerprint</i>
+                        <input name="password" placeholder="password" id="password" type="password" class="validate">
+                        <label for="password">password</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field">
+                        <div class="col s6 m6">
+                            <label class="type_student">
+                                <input name="usertype" type="radio" checked value="0"/>
+                                <span>Student</span>
+                            </label>
+                        </div>
+                        <div class="col s6 m6">
+                            <label class="type_counselor">
+                                <input name="usertype" type="radio" value="1"/>
+                                <span>Counselor</span>
+                            </label>
+                        </div>
 
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field">
+                        <button id="submit-button" class="col m12 s12 btn waves-effect waves-light" type="submit"
+                                name="action">
+                            Go
+                            <i class="material-icons right">send</i>
+                        </button>
+                        <div class="progress hide">
+                            <div class="indeterminate"></div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
     <div id="redirect">
 
@@ -138,8 +157,8 @@
     }
 
     function check_form() {
-        return document.getElementById('name').value.length > 0
-            && document.getElementById('prc_id').value.length > 0;
+        return document.getElementById('username').value.length > 0
+            && document.getElementById('password').value.length > 0;
     }
 
     function restore_button() {
@@ -174,15 +193,18 @@
         } else {
             document.querySelector('title').innerHTML = m.title;
             document.querySelector('header').querySelector('h1').innerHTML = m.nav;
-            document.querySelector('#name').setAttribute('placeholder', m.name);
-            document.querySelector("label[for='name']").innerHTML = m.name;
-            document.querySelector('#prc_id').setAttribute('placeholder', m.prc_id);
-            document.querySelector("label[for='prc_id']").innerHTML = m.prc_id;
+            document.querySelector('#username').setAttribute('placeholder', m.username);
+            document.querySelector("label[for='username']").innerHTML = m.username;
+            document.querySelector('#password').setAttribute('placeholder', m.password);
+            document.querySelector("label[for='password']").innerHTML = m.password;
             document.querySelector('button').innerHTML = m.go;
+            document.querySelector('.type_student').querySelector('span').innerHTML = m.type_student;
+            document.querySelector('.type_counselor').querySelector('span').innerHTML = m.type_counselor;
             document.querySelector('.footer-copyright').querySelector('.container').innerHTML = "© 2018 " + m.footer;
         }
 
-        document.getElementById('submit-button').onclick = function () {
+        document.getElementById('submit-button').onclick = function (e) {
+            e.preventDefault();
             if (!check_form()) {
                 M.toast({html: m.not_null});
                 return;
@@ -191,14 +213,16 @@
             $('.progress').removeClass('hide');
             $('#submit-button').addClass('disabled');
 
+            var data = {};
+            $('form').serializeArray().forEach(function (o) {
+                data[o.name] = o.value;
+            });
+            data.l = lang;
+
             $.ajax({
                 url: 'check.php',
                 method: 'POST',
-                data: {
-                    name: document.getElementById('name').value,
-                    prc_id: document.getElementById('prc_id').value,
-                    l: lang
-                }
+                data: data
             }).fail(function () {
                 restore_button();
             }).done(function (rp) {

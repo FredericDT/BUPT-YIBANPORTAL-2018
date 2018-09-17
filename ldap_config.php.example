@@ -1,0 +1,6 @@
+<?php
+
+$ldap_host = '';
+$ldap_port = 0;
+$ldap_admin_user = '';
+$ldap_admin_pass = '';
