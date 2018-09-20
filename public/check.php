@@ -3,14 +3,6 @@
 require "../db_config.php";
 
 /*
- * @param scId
- *
- * should be contained in a file named "give.txt" with is distributed by yiban company
- *
- */
-const scId = '1005_0';
-
-/*
  * @param enterYear
  *
  * a necessary parameter which will be delivered to yiban's o api
