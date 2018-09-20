@@ -4,3 +4,14 @@ $ldap_host = '';
 $ldap_port = 0;
 $ldap_admin_user = '';
 $ldap_admin_pass = '';
+
+// example "https://oa.example.com"
+$oa_prefix = "";
+
+/*
+ * @param scId
+ *
+ * should be contained in a file named "give.txt" with is distributed by yiban company
+ *
+ */
+const scId = '';

@@ -3,14 +3,6 @@
 require "../ldap_config.php";
 
 /*
- * @param scId
- *
- * should be contained in a file named "give.txt" with is distributed by yiban company
- *
- */
-const scId = '1005_0';
-
-/*
  * @param certPath
  *
  * path to the certification which should be delivered by the yiban company
@@ -28,7 +20,7 @@ const certPath = "../";
  * file path of the log
  *
  */
-const logFile = '/var/log/yibanportal-2018.log';
+const logFile = '/var/log/yibanportal.log';
 
 // a variable containing localize messages, using those messages via their key
 $messages = [
@@ -80,10 +72,11 @@ function run($infoArr, $path = '', $isMobile = false) {
 }
 
 function get_user_info_from_oa($id, $type) {
+    global $oa_prefix;
     if ($type) {
-        $url = 'http://oa.byr.cn/api/v1/teacher-info?teacher_id=' . $id;
+        $url = $oa_prefix.'/api/v1/teacher-info?teacher_id=' . $id;
     } else {
-        $url = 'http://oa.byr.cn/api/v1/student-info?stu_id=' . $id;
+        $url = $oa_prefix.'/api/v1/student-info?stu_id=' . $id;
     }
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
